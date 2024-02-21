@@ -1,0 +1,229 @@
+import media from '@ohos.multimedia.media';
+import common from '@ohos.app.ability.common';
+import audio from '@ohos.multimedia.audio';
+
+let avPlayer: media.AVPlayer;
+
+export class AVPlayerController {
+  private volume: number = 1.00;
+  private speed: number = 1;
+  private isLoaded: boolean = false;
+  public isPlaying: boolean = false;
+  private audioManager = audio.getAudioManager();
+
+  // 源库isLoaded()接口替代方案
+  setIsLoaded(isLoaded: boolean) {
+    this.isLoaded = isLoaded;
+  }
+
+  // 对外提供获取状态
+  getIsLoaded() {
+    return this.isLoaded;
+  }
+
+  constructor() {
+    this.avPlayerFdSrcDemo();
+  }
+
+  // 以下demo为使用资源管理接口获取打包在HAP内的媒体资源文件并通过fdSrc属性进行播放示例
+  async avPlayerFdSrcDemo() {
+    // 创建avPlayer实例对象
+    avPlayer = await media.createAVPlayer();
+    // 创建状态机变化回调函数
+    this.setAVPlayerCallback();
+    // 通过UIAbilityContext的resourceManager成员的getRawFd接口获取媒体资源播放地址
+    // 返回类型为{fd,offset,length},fd为HAP包fd地址，offset为媒体资源偏移量，length为播放长度
+    let context = getContext(this) as common.UIAbilityContext;
+    let fileDescriptor = await context.resourceManager.getRawFd('whoosh.mp3');
+    // 为fdSrc赋值触发initialized状态机上报
+    avPlayer.fdSrc = fileDescriptor;
+
+    //设置默认音量
+    avPlayer.setVolume(1.00);
+    //设置默认速度
+    avPlayer.setSpeed(media.PlaybackSpeed.SPEED_FORWARD_1_00_X)
+
+  }
+
+  // 注册avplayer回调函数
+  setAVPlayerCallback() {
+    // 状态机变化回调函数
+    avPlayer.on('stateChange', async (state, reason) => {
+      switch (state) {
+        case 'idle': // 成功调用reset接口后触发该状态机上报
+          console.debug('stateChange:  AVPlayer state idle called.');
+        /*
+         * 以下代码是为了 调用reset后 无法继续播放
+         * 在Idle 状态设置 url9+ 或 fdSrc9+属性，AVPlayer会进入initialized状态
+         */
+          let context = getContext(this) as common.UIAbilityContext;
+          let fileDescriptor = await context.resourceManager.getRawFd('whoosh.mp3');
+        // 为fdSrc赋值触发initialized状态机上报
+          avPlayer.fdSrc = fileDescriptor;
+
+          avPlayer.prepare();
+
+          break;
+        case 'initialized': // avplayer 设置播放源后触发该状态上报
+          console.debug('stateChange AVPlayerstate initialized called.');
+          avPlayer.prepare();
+          break;
+        case 'prepared': // prepare调用成功后上报该状态机
+          console.debug('stateChange: AVPlayer state prepared called.');
+          this.setIsLoaded(true); // 音频准备就绪
+          this.isPlaying = false
+        // avPlayer.play(); // 调用播放接口开始播放
+          break;
+        case 'playing': // play成功调用后触发该状态机上报
+          console.debug('stateChange: AVPlayer state playing called.');
+          this.isPlaying = true;
+          break;
+        case 'paused': // pause成功调用后触发该状态机上报
+          console.debug('stateChange: AVPlayer state paused called.');
+          this.isPlaying = false
+        //avPlayer.play(); // 再次播放接口开始播放
+          break;
+        case 'completed': // 播放结束后触发该状态机上报
+          console.debug('stateChange: AVPlayer state completed called.');
+          this.isPlaying = false
+        // avPlayer.stop(); //调用播放结束接口
+          break;
+        case 'stopped': // stop接口成功调用后触发该状态机上报
+          console.debug('stateChange: AVPlayer state stopped called.');
+          this.isPlaying = false
+
+        // stop状态重新调用prepare 用于下次可直接播放
+          avPlayer.prepare().then(() => {
+            console.debug('sound: AVPlayer prepare succeeded.');
+          }, (err: Error) => {
+            console.debug(`stateChange: Invoke prepare failed, code is ${err.name}, message is ${err.message}`);
+          });
+
+        //avPlayer.reset(); // 调用reset接口初始化avplayer状态
+          break;
+        case 'released':
+          console.debug('stateChange: AVPlayer state released called.');
+          this.isPlaying = false
+          break;
+        default:
+          console.debug('stateChange: AVPlayer state unknown called.');
+          this.isPlaying = false
+          break;
+      }
+    })
+
+    //音量监听
+    avPlayer.on('volumeChange', (vol: number) => {
+      console.debug('volumeChange success,and new volume is :' + vol)
+      this.volume = vol
+    })
+
+    //监听seek生效的事件
+    avPlayer.on('seekDone', (seekDoneTime: number) => {
+      console.debug('seekDone success,and seek time is:' + seekDoneTime)
+    })
+
+    //监听播放速度
+    avPlayer.on('speedDone', (speed: number) => {
+      console.debug('speedDone success,and speed value is:' + speed)
+    })
+  }
+
+  play(onEnd?: (success: boolean) => void): void {
+    console.log('sound duration: ', avPlayer.duration)
+    avPlayer.play()
+  }
+
+  pause(cb?: () => void): void {
+    avPlayer.pause();
+  }
+
+  stop(cb?: () => void): void {
+    avPlayer.stop();
+  }
+
+  reset(): void {
+    try {
+      avPlayer.reset();
+    } catch (e) {
+      console.debug('sound reset error: ', JSON.stringify(e))
+    }
+  }
+
+  release(): void {
+    avPlayer.release();
+  }
+
+  getDuration() {
+    return avPlayer.duration;
+  }
+
+  setVolume(volume: number) {
+    //The volume ranges from 0.00 to 1.00
+    avPlayer.setVolume(volume)
+  }
+
+  getVolume() {
+    return this.volume;
+  }
+
+  getCurrentTime() {
+    return avPlayer.currentTime;
+  }
+
+  setCurrentTime(value: number): void {
+    if (value < 0) value = 0;
+    else if (value > avPlayer.duration) value = avPlayer.duration;
+    avPlayer.seek(value, media.SeekMode.SEEK_PREV_SYNC)
+  }
+
+  getSpeed() {
+    return this.speed;
+  }
+
+  // value is : 0,1,2,3,4
+  setSpeed(value: number): void {
+    switch (value) {
+      case 0:
+        this.speed = 0;
+        avPlayer.setSpeed(media.PlaybackSpeed.SPEED_FORWARD_0_75_X)
+        break
+      case 1:
+        this.speed = 1;
+        avPlayer.setSpeed(media.PlaybackSpeed.SPEED_FORWARD_1_00_X)
+        break
+      case 2:
+        this.speed = 2;
+        avPlayer.setSpeed(media.PlaybackSpeed.SPEED_FORWARD_1_25_X)
+        break
+      case 3:
+        this.speed = 3;
+        avPlayer.setSpeed(media.PlaybackSpeed.SPEED_FORWARD_1_75_X)
+        break
+      case 3:
+        this.speed = 4;
+        avPlayer.setSpeed(media.PlaybackSpeed.SPEED_FORWARD_2_00_X)
+        break
+    }
+  }
+
+  setActive(active: boolean): void {
+    this.audioManager.getRoutingManager()
+      .setCommunicationDevice(audio.CommunicationDeviceType.SPEAKER, active, (err) => {
+        if (err) {
+          console.error(`sound Failed to set the active status of the device. ${err}`);
+          return;
+        }
+        console.info('sound Callback invoked to indicate that the device is set to the active status.');
+      });
+
+  }
+
+  getNumberOfLoops() {
+    return avPlayer.loop;
+  }
+
+  setNumberOfLoops(value: boolean): void {
+    avPlayer.loop = value
+  }
+}
