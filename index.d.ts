@@ -57,6 +57,8 @@ declare class Sound {
    */
   constructor(filenameOrFile: FilenameType | FileType, basePathOrCallback?: BasePathType | CallbackType, callback?: CallbackType)
 
+  constructor()
+
   /**
    * Return true if the sound has been loaded.
    */
