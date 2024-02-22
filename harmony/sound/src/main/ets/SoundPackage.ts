@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 /**
  * MIT License
  *
@@ -23,8 +23,6 @@
  * SOFTWARE.
  */
 
-=======
->>>>>>> 92ebc57f1374f8c91e0735044bff134d91e35aa6
 import { RNPackage, TurboModulesFactory } from 'rnoh/ts';
 import type { TurboModule, TurboModuleContext } from 'rnoh/ts';
 import { SoundTurboModule } from './SoundTurboModule';

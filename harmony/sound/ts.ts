@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 /**
  * MIT License
  *
@@ -23,7 +22,5 @@
  * SOFTWARE.
  */
 
-=======
->>>>>>> 92ebc57f1374f8c91e0735044bff134d91e35aa6
 export * from './src/main/ets/SoundPackage';
 export * from './src/main/ets/SoundTurboModule';
