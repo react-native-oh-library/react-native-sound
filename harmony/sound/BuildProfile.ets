@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 /**
  * MIT License
  *
@@ -22,6 +23,8 @@
  * SOFTWARE.
  */
 
+=======
+>>>>>>> 92ebc57f1374f8c91e0735044bff134d91e35aa6
 export default class BuildProfile { 
 	static readonly HAR_VERSION = '1.0.0';
 	static readonly BUILD_MODE_NAME = 'debug';

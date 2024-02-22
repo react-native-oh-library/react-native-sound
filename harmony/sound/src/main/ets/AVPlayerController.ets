@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 /**
  * MIT License
  *
@@ -22,6 +23,8 @@
  * SOFTWARE.
  */
 
+=======
+>>>>>>> 92ebc57f1374f8c91e0735044bff134d91e35aa6
 import media from '@ohos.multimedia.media';
 import common from '@ohos.app.ability.common';
 import audio from '@ohos.multimedia.audio';
