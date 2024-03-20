@@ -26,6 +26,10 @@ import media from '@ohos.multimedia.media';
 import common from '@ohos.app.ability.common';
 import audio from '@ohos.multimedia.audio';
 
+import Logger from './Logger';
+
+const TAG: string = "[RNOH] Sound"
+
 let avPlayer: media.AVPlayer;
 
 export class AVPlayerController {
@@ -75,7 +79,7 @@ export class AVPlayerController {
     avPlayer.on('stateChange', async (state, reason) => {
       switch (state) {
         case 'idle': // 成功调用reset接口后触发该状态机上报
-          console.debug('stateChange:  AVPlayer state idle called.');
+          Logger.info(TAG, 'stateChange:  AVPlayer state idle called.');
         /*
          * 以下代码是为了 调用reset后 无法继续播放
          * 在Idle 状态设置 url9+ 或 fdSrc9+属性，AVPlayer会进入initialized状态
@@ -89,48 +93,48 @@ export class AVPlayerController {
 
           break;
         case 'initialized': // avplayer 设置播放源后触发该状态上报
-          console.debug('stateChange AVPlayerstate initialized called.');
+          Logger.info(TAG, 'stateChange AVPlayerstate initialized called.');
           avPlayer.prepare();
           break;
         case 'prepared': // prepare调用成功后上报该状态机
-          console.debug('stateChange: AVPlayer state prepared called.');
+          Logger.info(TAG, 'stateChange AVPlayer state prepared called.');
           this.setIsLoaded(true); // 音频准备就绪
           this.isPlaying = false
         // avPlayer.play(); // 调用播放接口开始播放
           break;
         case 'playing': // play成功调用后触发该状态机上报
-          console.debug('stateChange: AVPlayer state playing called.');
+          Logger.info(TAG, 'stateChange AVPlayer state playing called.');
           this.isPlaying = true;
           break;
         case 'paused': // pause成功调用后触发该状态机上报
-          console.debug('stateChange: AVPlayer state paused called.');
+          Logger.info(TAG, 'stateChange AVPlayer state paused called.');
           this.isPlaying = false
         //avPlayer.play(); // 再次播放接口开始播放
           break;
         case 'completed': // 播放结束后触发该状态机上报
-          console.debug('stateChange: AVPlayer state completed called.');
+          Logger.info(TAG, 'stateChange AVPlayer state completed called.');
           this.isPlaying = false
         // avPlayer.stop(); //调用播放结束接口
           break;
         case 'stopped': // stop接口成功调用后触发该状态机上报
-          console.debug('stateChange: AVPlayer state stopped called.');
+          Logger.info(TAG, 'stateChange AVPlayer state stopped called.');
           this.isPlaying = false
 
         // stop状态重新调用prepare 用于下次可直接播放
           avPlayer.prepare().then(() => {
-            console.debug('sound: AVPlayer prepare succeeded.');
+            Logger.info(TAG, 'sound: AVPlayer prepare succeeded.');
           }, (err: Error) => {
-            console.debug(`stateChange: Invoke prepare failed, code is ${err.name}, message is ${err.message}`);
+            Logger.error(TAG, `stateChange: Invoke prepare failed, code is ${err.name}, message is ${err.message}`);
           });
 
         //avPlayer.reset(); // 调用reset接口初始化avplayer状态
           break;
         case 'released':
-          console.debug('stateChange: AVPlayer state released called.');
+          Logger.info(TAG, 'stateChange AVPlayer state released called.');
           this.isPlaying = false
           break;
         default:
-          console.debug('stateChange: AVPlayer state unknown called.');
+          Logger.info(TAG, 'stateChange AVPlayer state unknown called.');
           this.isPlaying = false
           break;
       }
@@ -138,23 +142,23 @@ export class AVPlayerController {
 
     //音量监听
     avPlayer.on('volumeChange', (vol: number) => {
-      console.debug('volumeChange success,and new volume is :' + vol)
+      Logger.info(TAG, 'volumeChange success,and new volume is :' + vol);
       this.volume = vol
     })
 
     //监听seek生效的事件
     avPlayer.on('seekDone', (seekDoneTime: number) => {
-      console.debug('seekDone success,and seek time is:' + seekDoneTime)
+      Logger.info(TAG, 'seekDone success,and seek time is:' + seekDoneTime);
     })
 
     //监听播放速度
     avPlayer.on('speedDone', (speed: number) => {
-      console.debug('speedDone success,and speed value is:' + speed)
+      Logger.info(TAG, 'speedDone success,and speed value is:' + speed);
     })
   }
 
   play(onEnd?: (success: boolean) => void): void {
-    console.log('sound duration: ', avPlayer.duration)
+    Logger.info(TAG, 'sound duration: ' + avPlayer.duration);
     avPlayer.play()
   }
 
@@ -170,7 +174,7 @@ export class AVPlayerController {
     try {
       avPlayer.reset();
     } catch (e) {
-      console.debug('sound reset error: ', JSON.stringify(e))
+      Logger.info(TAG, 'sound reset error: ' + JSON.stringify(e));
     }
   }
 
@@ -235,10 +239,10 @@ export class AVPlayerController {
     this.audioManager.getRoutingManager()
       .setCommunicationDevice(audio.CommunicationDeviceType.SPEAKER, active, (err) => {
         if (err) {
-          console.error(`sound Failed to set the active status of the device. ${err}`);
+          Logger.error(TAG, `sound Failed to set the active status of the device. ${err}`);
           return;
         }
-        console.info('sound Callback invoked to indicate that the device is set to the active status.');
+        Logger.info(TAG, 'sound Callback invoked to indicate that the device is set to the active status.');
       });
 
   }
