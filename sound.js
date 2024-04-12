@@ -126,6 +126,8 @@ function Sound(filename, basePath, onError, options) {
       }
       onError && onError(error, props);
     });
+  } else {
+    RNSound.prepare(this._filename);
   }
 
 }
@@ -225,7 +227,7 @@ Sound.prototype.getDuration = function() {
   if(IsAndroid||IsWindows){
     return this._duration;
   }else{
-    RNSound.getDuration();
+    return RNSound.getDuration();
   }
   
 };
@@ -234,7 +236,7 @@ Sound.prototype.getNumberOfChannels = function() {
   if(IsAndroid||IsWindows){
     return this._numberOfChannels;
   }else {
-    RNSound.getNumberOfChannels();
+    return RNSound.getNumberOfChannels();
   }
  
 };
@@ -243,7 +245,7 @@ Sound.prototype.getVolume = function() {
     if(IsAndroid||IsWindows){
       return this._volume;
     }else {
-      RNSound.getVolume();
+      return RNSound.getVolume();
     }
  
 };
@@ -252,7 +254,7 @@ Sound.prototype.getSpeed = function() {
   if(IsAndroid||IsWindows){
     return this._speed;
   }else {
-    RNSound.getSpeed();
+    return RNSound.getSpeed();
   }
 };
 
@@ -293,7 +295,7 @@ Sound.prototype.setPan = function(value) {
 
 Sound.prototype.getSystemVolume = function(callback) {
   if(!IsWindows) {
-    RNSound.getSystemVolume(callback);
+    return RNSound.getSystemVolume(callback);
   }
   return this;
 };
@@ -360,7 +362,7 @@ Sound.prototype.getCurrentTime = function(callback) {
       RNSound.getCurrentTime(this._key, callback);
     }
   }else{
-    RNSound.getCurrentTime();
+    return RNSound.getCurrentTime();
   }
  
 };
@@ -397,7 +399,7 @@ Sound.prototype.isPlaying = function() {
   if(IsAndroid||IsWindows){
     return this._playing;
   }else{
-    RNSound.isPlaying();
+    return RNSound.isPlaying();
   }
   
 }

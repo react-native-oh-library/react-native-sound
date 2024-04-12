@@ -139,6 +139,12 @@ static jsi::Value __hostFunction_NativeSoundTurboModuleSpecJSI_getDuration(jsi::
     return static_cast<ArkTSTurboModule &>(turboModule).call(rt, "getDuration", args, count);
 }
 
+static jsi::Value __hostFunction_NativeSoundTurboModuleSpecJSI_prepare(jsi::Runtime &rt,
+                                                                           react::TurboModule &turboModule,
+                                                                           const jsi::Value *args, size_t count) {
+    return static_cast<ArkTSTurboModule &>(turboModule).call(rt, "prepare", args, count);
+}
+
 NativeSoundTurboModuleSpecJSI::NativeSoundTurboModuleSpecJSI(const ArkTSTurboModule::Context ctx,
                                                              const std::string name)
     : ArkTSTurboModule(ctx, name) {
@@ -159,5 +165,5 @@ NativeSoundTurboModuleSpecJSI::NativeSoundTurboModuleSpecJSI(const ArkTSTurboMod
     methodMap_["getNumberOfLoops"] = MethodMetadata{0, __hostFunction_NativeSoundTurboModuleSpecJSI_getNumberOfLoops};
     methodMap_["setNumberOfLoops"] = MethodMetadata{1, __hostFunction_NativeSoundTurboModuleSpecJSI_setNumberOfLoops};
     methodMap_["getDuration"] = MethodMetadata{0, __hostFunction_NativeSoundTurboModuleSpecJSI_getDuration};
-
+    methodMap_["prepare"] = MethodMetadata{1, __hostFunction_NativeSoundTurboModuleSpecJSI_prepare};
 }

@@ -31,10 +31,15 @@ const TAG: string = "[RNOH] Sound"
 export class SoundTurboModule extends TurboModule {
   controller: AVPlayerController = new AVPlayerController()
 
+    prepare(filename: string) {
+        this.controller.setFileDescriptor(filename)
+    }
+
   constructor(protected ctx: TurboModuleContext) {
     super(ctx);
     Logger.info(TAG, '[RNOH]:SoundTurboModule constructor');
   }
+
 
   setActive(active: boolean): void {
     this.controller.setActive(active)
@@ -70,6 +75,8 @@ export class SoundTurboModule extends TurboModule {
     Logger.info(TAG, 'sound  : '+ 'reset success');
     this.controller.reset();
   }
+
+
 
   release(): void {
     Logger.info(TAG, 'sound  : '+ 'release success');

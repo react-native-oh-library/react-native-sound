@@ -33,7 +33,8 @@ const TAG: string = "[RNOH] Sound"
 let avPlayer: media.AVPlayer;
 
 export class AVPlayerController {
-  private volume: number = 1.00;
+
+    private volume: number = 1.00;
   private speed: number = 1;
   private isLoaded: boolean = false;
   public isPlaying: boolean = false;
@@ -60,11 +61,6 @@ export class AVPlayerController {
     // 创建状态机变化回调函数
     this.setAVPlayerCallback();
     // 通过UIAbilityContext的resourceManager成员的getRawFd接口获取媒体资源播放地址
-    // 返回类型为{fd,offset,length},fd为HAP包fd地址，offset为媒体资源偏移量，length为播放长度
-    let context = getContext(this) as common.UIAbilityContext;
-    let fileDescriptor = await context.resourceManager.getRawFd('whoosh.mp3');
-    // 为fdSrc赋值触发initialized状态机上报
-    avPlayer.fdSrc = fileDescriptor;
 
     //设置默认音量
     avPlayer.setVolume(1.00);
@@ -72,6 +68,15 @@ export class AVPlayerController {
     avPlayer.setSpeed(media.PlaybackSpeed.SPEED_FORWARD_1_00_X)
 
   }
+
+    async setFileDescriptor(fileName: string) {
+        let context = getContext(this) as common.UIAbilityContext;
+        // let fileDescriptor = await context.resourceManager.getRawFd('whoosh.mp3');
+        console.log('setFileDescriptor: ', fileName)
+        let fileDescriptor = await context.resourceManager.getRawFd(fileName);
+        // 为fdSrc赋值触发initialized状态机上报
+        avPlayer.fdSrc = fileDescriptor;
+    }
 
   // 注册avplayer回调函数
   setAVPlayerCallback() {
@@ -84,10 +89,10 @@ export class AVPlayerController {
          * 以下代码是为了 调用reset后 无法继续播放
          * 在Idle 状态设置 url9+ 或 fdSrc9+属性，AVPlayer会进入initialized状态
          */
-          let context = getContext(this) as common.UIAbilityContext;
-          let fileDescriptor = await context.resourceManager.getRawFd('whoosh.mp3');
+         // let context = getContext(this) as common.UIAbilityContext;
+          //let fileDescriptor = await context.resourceManager.getRawFd('whoosh.mp3');
         // 为fdSrc赋值触发initialized状态机上报
-          avPlayer.fdSrc = fileDescriptor;
+         // avPlayer.fdSrc = fileDescriptor;
 
           avPlayer.prepare();
 

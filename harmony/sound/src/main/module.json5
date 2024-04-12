@@ -1,11 +1,9 @@
 {
-  "module": {
-    "name": "sound",
-    "type": "har",
-    "deviceTypes": [
-      "default",
-      "tablet",
-      "2in1"
-    ]
-  }
+    "module": {
+        "name": "sound",
+        "type": "har",
+        "deviceTypes": [
+            "default"
+        ]
+    }
 }
