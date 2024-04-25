@@ -34,7 +34,8 @@ let avPlayer: media.AVPlayer;
 
 export class AVPlayerController {
 
-    private volume: number = 1.00;
+  private filename: string = '';
+  private volume: number = 1.00;
   private speed: number = 1;
   private isLoaded: boolean = false;
   public isPlaying: boolean = false;
@@ -70,12 +71,11 @@ export class AVPlayerController {
   }
 
     async setFileDescriptor(fileName: string) {
-        let context = getContext(this) as common.UIAbilityContext;
-        // let fileDescriptor = await context.resourceManager.getRawFd('whoosh.mp3');
-        console.log('setFileDescriptor: ', fileName)
-        let fileDescriptor = await context.resourceManager.getRawFd(fileName);
-        // 为fdSrc赋值触发initialized状态机上报
-        avPlayer.fdSrc = fileDescriptor;
+      this.filename = fileName;
+      let context = getContext(this) as common.UIAbilityContext;
+      let fileDescriptor = await context.resourceManager.getRawFd(fileName);
+      // 为fdSrc赋值触发initialized状态机上报
+      avPlayer.fdSrc = fileDescriptor;
     }
 
   // 注册avplayer回调函数
@@ -89,11 +89,9 @@ export class AVPlayerController {
          * 以下代码是为了 调用reset后 无法继续播放
          * 在Idle 状态设置 url9+ 或 fdSrc9+属性，AVPlayer会进入initialized状态
          */
-         // let context = getContext(this) as common.UIAbilityContext;
-          //let fileDescriptor = await context.resourceManager.getRawFd('whoosh.mp3');
-        // 为fdSrc赋值触发initialized状态机上报
-         // avPlayer.fdSrc = fileDescriptor;
-
+          if (this.filename) {
+            this.setFileDescriptor(this.filename);
+          }
           avPlayer.prepare();
 
           break;
