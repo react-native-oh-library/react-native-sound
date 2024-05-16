@@ -129,6 +129,10 @@ export interface Spec extends TurboModule {
   
 
     isPlaying(): boolean
+
+    addListener: (eventName: string) => void
+
+    removeListeners: (count: number) => void
   }
 
   // 'RNCSound' 为最后导出的TurboModule名称，后续通过识别名称来识别模块。

@@ -140,9 +140,21 @@ static jsi::Value __hostFunction_NativeSoundTurboModuleSpecJSI_getDuration(jsi::
 }
 
 static jsi::Value __hostFunction_NativeSoundTurboModuleSpecJSI_prepare(jsi::Runtime &rt,
+                                                                       react::TurboModule &turboModule,
+                                                                       const jsi::Value *args, size_t count) {
+    return static_cast<ArkTSTurboModule &>(turboModule).call(rt, "prepare", args, count);
+}
+
+static jsi::Value __hostFunction_NativeSoundTurboModuleSpecJSI_addListener(jsi::Runtime &rt,
+                                                                       react::TurboModule &turboModule,
+                                                                       const jsi::Value *args, size_t count) {
+    return static_cast<ArkTSTurboModule &>(turboModule).call(rt, "addListener", args, count);
+}
+
+static jsi::Value __hostFunction_NativeSoundTurboModuleSpecJSI_removeListeners(jsi::Runtime &rt,
                                                                            react::TurboModule &turboModule,
                                                                            const jsi::Value *args, size_t count) {
-    return static_cast<ArkTSTurboModule &>(turboModule).call(rt, "prepare", args, count);
+    return static_cast<ArkTSTurboModule &>(turboModule).call(rt, "removeListeners", args, count);
 }
 
 NativeSoundTurboModuleSpecJSI::NativeSoundTurboModuleSpecJSI(const ArkTSTurboModule::Context ctx,
@@ -166,4 +178,7 @@ NativeSoundTurboModuleSpecJSI::NativeSoundTurboModuleSpecJSI(const ArkTSTurboMod
     methodMap_["setNumberOfLoops"] = MethodMetadata{1, __hostFunction_NativeSoundTurboModuleSpecJSI_setNumberOfLoops};
     methodMap_["getDuration"] = MethodMetadata{0, __hostFunction_NativeSoundTurboModuleSpecJSI_getDuration};
     methodMap_["prepare"] = MethodMetadata{1, __hostFunction_NativeSoundTurboModuleSpecJSI_prepare};
+    methodMap_["addListener"] = MethodMetadata{1, __hostFunction_NativeSoundTurboModuleSpecJSI_addListener};
+    methodMap_["removeListeners"] = MethodMetadata{1, __hostFunction_NativeSoundTurboModuleSpecJSI_removeListeners};
 }
+

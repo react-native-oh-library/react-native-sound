@@ -126,4 +126,12 @@ export class SoundTurboModule extends TurboModule {
     Logger.info(TAG, 'sound setNumberOfLoops : '+ value);
     this.controller.setNumberOfLoops(value)
   }
+
+  addListener(eventName: string) {
+    Logger.info(TAG, 'addListener : '+ eventName);
+  }
+
+  removeListeners(count: number) {
+    Logger.info(TAG, 'removeListeners : '+ count);
+  }
 }
