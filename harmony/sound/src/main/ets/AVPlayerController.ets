@@ -71,11 +71,15 @@ export class AVPlayerController {
   }
 
     async setFileDescriptor(fileName: string) {
-      this.filename = fileName;
-      let context = getContext(this) as common.UIAbilityContext;
-      let fileDescriptor = await context.resourceManager.getRawFd(fileName);
-      // 为fdSrc赋值触发initialized状态机上报
-      avPlayer.fdSrc = fileDescriptor;
+      if(fileName.startsWith('asset')){
+        this.filename = fileName.split('//')[1];
+        let context = getContext(this) as common.UIAbilityContext;
+        let fileDescriptor = await context.resourceManager.getRawFd(`assets/${this.filename}`);
+        avPlayer.fdSrc = fileDescriptor;
+      }else {
+        this.filename = fileName;
+        avPlayer.url = fileName;
+      }
     }
 
   // 注册avplayer回调函数
