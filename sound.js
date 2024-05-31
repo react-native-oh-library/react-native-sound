@@ -31,7 +31,7 @@ var RNSound = TurboModuleRegistry?TurboModuleRegistry.get('RNCSound'): ReactNati
 var IsAndroid = RNSound.IsAndroid;
 var IsWindows = RNSound.IsWindows;
 var resolveAssetSource = require("react-native/Libraries/Image/resolveAssetSource");
-var eventEmitter = new ReactNative.NativeEventEmitter(RNSound);
+var eventEmitter = new ReactNative.NativeEventEmitter();
 
 var nextKey = 0;
 
