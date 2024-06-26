@@ -42,11 +42,19 @@ interface E {
   message: string
 }
 
+enum Speed{
+  ZERO = 0,
+  ONE = 1,
+  TWO = 2,
+  THREE = 3,
+  FOUR = 4
+}
+
 export class AVPlayerController {
   private audioManager = audio.getAudioManager();
   public playerPool = new Object();
   public isPlaying: boolean = false;
-  async prepare(fileName: string, key: number, option: object, callBack: (error: E, props:PrepareProps)=>void) {
+  async prepare(fileName: string, key: number, option: object, callBack: (error: E, props:PrepareProps) => void) {
     const mediaPlayer: media.AVPlayer = await media.createAVPlayer();
     let filename: string = '';
     if(fileName.startsWith('asset')){
@@ -211,19 +219,19 @@ export class AVPlayerController {
   setSpeed(key:number, value: number): void {
     const player: media.AVPlayer = this.playerPool[key];
     switch (value) {
-      case 0:
+      case Speed.ZERO:
         player.setSpeed(media.PlaybackSpeed.SPEED_FORWARD_0_75_X)
         break
-      case 1:
+      case Speed.ONE:
         player.setSpeed(media.PlaybackSpeed.SPEED_FORWARD_1_00_X)
         break
-      case 2:
+      case Speed.TWO:
         player.setSpeed(media.PlaybackSpeed.SPEED_FORWARD_1_25_X)
         break
-      case 3:
+      case Speed.THREE:
         player.setSpeed(media.PlaybackSpeed.SPEED_FORWARD_1_75_X)
         break
-      case 4:
+      case Speed.FOUR:
         player.setSpeed(media.PlaybackSpeed.SPEED_FORWARD_2_00_X)
         break
     }

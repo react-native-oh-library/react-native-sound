@@ -44,65 +44,54 @@ export class SoundTurboModule extends TurboModule {
   }
 
   getDuration(key:number): number {
-    Logger.info(TAG, 'sound getDuration : '+ this.controller.getDuration(key));
     return this.controller.getDuration(key);
   }
 
   play(key, onEnd?: (success: boolean) => void): void {
-    Logger.info(TAG, 'sound  : '+ 'play start');
     this.controller.play(key, onEnd);
   }
 
   pause(key, cb?: () => void): void {
-    Logger.info(TAG, 'sound  : '+ 'pause success');
     this.controller.pause(key, cb);
   }
 
   stop(key, cb?: () => void): void {
-    Logger.info(TAG, 'sound  : '+ 'stop success');
     this.controller.stop(key, cb);
   }
 
   reset(key): void {
-    Logger.info(TAG, 'sound  : '+ 'reset success');
     this.controller.reset(key);
   }
 
   release(key): void {
-    Logger.info(TAG, 'sound  : '+ 'release success');
     this.controller.release(key);
   }
 
   setVolume(key: number, value: number): void {
-    Logger.info(TAG, 'sound setVolume : '+ value);
     this.controller.setVolume(key, value)
   }
 
   getCurrentTime(key: number, callBack?: (currentPosition: number, isPlaying: boolean) => void): void {
-    Logger.info(TAG, 'sound getCurrentTime')
     return this.controller.getCurrentTime(key, callBack);
   }
 
   setCurrentTime(key: number, value: number): void {
-    Logger.info(TAG, 'sound setCurrentTime : '+ value);
     this.controller.setCurrentTime(key, value);
   }
 
   setSpeed(key: number, value: number): void {
-    Logger.info(TAG, 'sound setSpeed : '+ value);
     this.controller.setSpeed(key, value);
   }
 
   setNumberOfLoops(key:number, value: boolean): void {
-    Logger.info(TAG, 'sound setNumberOfLoops : '+ value);
     this.controller.setNumberOfLoops(key, value)
   }
 
   addListener(eventName: string) {
-    Logger.info(TAG, 'addListener : '+ eventName);
+    Logger.info(TAG, `addListener : ${eventName}`);
   }
 
   removeListeners(count: number) {
-    Logger.info(TAG, 'removeListeners : '+ count);
+    Logger.info(TAG, `removeListeners : ${count}`);
   }
 }
