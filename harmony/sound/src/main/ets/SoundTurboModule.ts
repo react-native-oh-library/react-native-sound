@@ -30,9 +30,8 @@ const TAG: string = "[RNOH] Sound"
 
 export class SoundTurboModule extends TurboModule {
   controller: AVPlayerController = new AVPlayerController()
-
-  prepare(filename: string) {
-      this.controller.setFileDescriptor(filename)
+  prepare(filename: string, key: number, option: object, callBack: ()=>void) {
+      this.controller.prepare(filename, key, option, callBack)
   }
 
   constructor(protected ctx: TurboModuleContext) {
@@ -44,87 +43,59 @@ export class SoundTurboModule extends TurboModule {
     this.controller.setActive(active)
   }
 
-  isLoaded(): boolean {
-    Logger.info(TAG, 'sound isLoaded : '+ this.controller.getIsLoaded());
-    return this.controller.getIsLoaded()
+  getDuration(key:number): number {
+    Logger.info(TAG, 'sound getDuration : '+ this.controller.getDuration(key));
+    return this.controller.getDuration(key);
   }
 
-  getDuration(): number {
-    Logger.info(TAG, 'sound getDuration : '+ this.controller.getDuration());
-    return this.controller.getDuration();
-  }
-
-
-  play(onEnd?: (success: boolean) => void): void {
+  play(key, onEnd?: (success: boolean) => void): void {
     Logger.info(TAG, 'sound  : '+ 'play start');
-    this.controller.play();
+    this.controller.play(key, onEnd);
   }
 
-  pause(cb?: () => void): void {
+  pause(key, cb?: () => void): void {
     Logger.info(TAG, 'sound  : '+ 'pause success');
-    this.controller.pause();
+    this.controller.pause(key, cb);
   }
 
-  stop(cb?: () => void): void {
+  stop(key, cb?: () => void): void {
     Logger.info(TAG, 'sound  : '+ 'stop success');
-    this.controller.stop();
+    this.controller.stop(key, cb);
   }
 
-  reset(): void {
+  reset(key): void {
     Logger.info(TAG, 'sound  : '+ 'reset success');
-    this.controller.reset();
+    this.controller.reset(key);
   }
 
-  release(): void {
+  release(key): void {
     Logger.info(TAG, 'sound  : '+ 'release success');
-    this.controller.release();
+    this.controller.release(key);
   }
 
-  getVolume(): number {
-    Logger.info(TAG, 'sound getVolume : '+ this.controller.getVolume());
-    return this.controller.getVolume();
-  }
-
-  setVolume(value: number): void {
+  setVolume(key: number, value: number): void {
     Logger.info(TAG, 'sound setVolume : '+ value);
-    this.controller.setVolume(value)
+    this.controller.setVolume(key, value)
   }
 
-  getCurrentTime(): number {
-    Logger.info(TAG, 'sound getCurrentTime : '+ this.controller.getCurrentTime());
-    return this.controller.getCurrentTime();
+  getCurrentTime(key: number, callBack?: (currentPosition: number, isPlaying: boolean) => void): void {
+    Logger.info(TAG, 'sound getCurrentTime')
+    return this.controller.getCurrentTime(key, callBack);
   }
 
-  setCurrentTime(value: number): void {
-    if (value < 0) value = 0;
-    else if (value > this.controller.getDuration()) value = this.controller.getDuration();
+  setCurrentTime(key: number, value: number): void {
     Logger.info(TAG, 'sound setCurrentTime : '+ value);
-    this.controller.setCurrentTime(value);
+    this.controller.setCurrentTime(key, value);
   }
 
-  getSpeed(): number {
-    Logger.info(TAG, 'sound getSpeed : '+ this.controller.getSpeed());
-    return this.controller.getSpeed();
-  }
-
-  setSpeed(value: number): void {
+  setSpeed(key: number, value: number): void {
     Logger.info(TAG, 'sound setSpeed : '+ value);
-    this.controller.setSpeed(value);
+    this.controller.setSpeed(key, value);
   }
 
-  isPlaying(): boolean {
-    Logger.info(TAG, 'sound isPlaying : '+ this.controller.isPlaying);
-    return this.controller.isPlaying;
-  }
-
-  getNumberOfLoops() {
-    Logger.info(TAG, 'sound getNumberOfLoops : '+ this.controller.getNumberOfLoops());
-    return this.controller.getNumberOfLoops();
-  }
-
-  setNumberOfLoops(value: boolean): void {
+  setNumberOfLoops(key:number, value: boolean): void {
     Logger.info(TAG, 'sound setNumberOfLoops : '+ value);
-    this.controller.setNumberOfLoops(value)
+    this.controller.setNumberOfLoops(key, value)
   }
 
   addListener(eventName: string) {
