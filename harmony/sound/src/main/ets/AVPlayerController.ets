@@ -25,219 +25,214 @@
 import media from '@ohos.multimedia.media';
 import common from '@ohos.app.ability.common';
 import audio from '@ohos.multimedia.audio';
-
+import { BusinessError } from '@kit.BasicServicesKit';
 import Logger from './Logger';
 
 const TAG: string = "[RNOH] Sound"
 
 let avPlayer: media.AVPlayer;
 
+export interface PrepareProps {
+  duration: number
+  numberOfChannels?: number
+}
+
+interface E {
+  code: number,
+  message: string
+}
+
+enum Speed{
+  ZERO = 0,
+  ONE = 1,
+  TWO = 2,
+  THREE = 3,
+  FOUR = 4
+}
+
 export class AVPlayerController {
-
-  private filename: string = '';
-  private volume: number = 1.00;
-  private speed: number = 1;
-  private isLoaded: boolean = false;
-  public isPlaying: boolean = false;
   private audioManager = audio.getAudioManager();
+  public playerPool = new Object();
+  public isPlaying: boolean = false;
+  async prepare(fileName: string, key: number, option: object, callBack: (error: E, props:PrepareProps) => void) {
+    const mediaPlayer: media.AVPlayer = await media.createAVPlayer();
+    let filename: string = '';
+    if(fileName.startsWith('asset')){
+      filename = fileName.split('//')[1];
+      let context = getContext(this) as common.UIAbilityContext;
+      let fileDescriptor = await context.resourceManager.getRawFd(`assets/${filename}`);
+      mediaPlayer.fdSrc = fileDescriptor;
+    } else {
+      mediaPlayer.url = fileName;
+    }
 
-  // 源库isLoaded()接口替代方案
-  setIsLoaded(isLoaded: boolean) {
-    this.isLoaded = isLoaded;
-  }
+    const mediaPrepare = () => {
+      mediaPlayer.prepare().then(()=>{
+        const props:PrepareProps = {
+          duration:mediaPlayer.duration,
+        }
+        Logger.info(TAG, `avPlay prepare success`);
+        callBack(null, props);
+      },(err: BusinessError)=>{
+        Logger.info(TAG, `avPlay prepare error:${err.name} message ${err.message}`);
+        const e: E = {
+          code: -1,
+          message: `avPlay prepare error:${err.name} message ${err.message}}`
+        }
+        callBack(e, null);
+      });
+    }
 
-  // 对外提供获取状态
-  getIsLoaded() {
-    return this.isLoaded;
-  }
+    mediaPlayer.on('stateChange', async (state, reason) => {
+      Logger.info(TAG, `stateChange128:  AVPlayer state idle called${state}`);
+      switch (state) {
+        case 'initialized': // avplayer 设置播放源后触发该状态上报
+          Logger.info(TAG, 'stateChange AVPlayerstate initialized called.');
+          mediaPrepare()
+          break;
+        default:
+          Logger.info(TAG, 'stateChange AVPlayer state unknown called.');
+          break;
+      }
+    })
 
-  constructor() {
-    this.avPlayerFdSrcDemo();
-  }
+    if (mediaPlayer == null) {
+      const e: E = {
+        code: -1,
+        message: "resource not found"
+      }
+      callBack(e, null);
+      return;
+    }
 
-  // 以下demo为使用资源管理接口获取打包在HAP内的媒体资源文件并通过fdSrc属性进行播放示例
-  async avPlayerFdSrcDemo() {
-    // 创建avPlayer实例对象
-    avPlayer = await media.createAVPlayer();
-    // 创建状态机变化回调函数
-    this.setAVPlayerCallback();
-    // 通过UIAbilityContext的resourceManager成员的getRawFd接口获取媒体资源播放地址
-
+    this.playerPool[key] = mediaPlayer
     //设置默认音量
     avPlayer.setVolume(1.00);
     //设置默认速度
     avPlayer.setSpeed(media.PlaybackSpeed.SPEED_FORWARD_1_00_X)
 
+    //播放错误监听
+    avPlayer.on('error', (err: BusinessError) => {
+      console.error(TAG,`failed, code is ${err.code}, message is ${err.message}`);
+      avPlayer.reset(); // 调用reset重置资源，触发idle状态
+    })
   }
 
-    async setFileDescriptor(fileName: string) {
-      if(fileName.startsWith('asset')){
-        this.filename = fileName.split('//')[1];
-        let context = getContext(this) as common.UIAbilityContext;
-        let fileDescriptor = await context.resourceManager.getRawFd(`assets/${this.filename}`);
-        avPlayer.fdSrc = fileDescriptor;
-      }else {
-        this.filename = fileName;
-        avPlayer.url = fileName;
+  play(key: number, callback?: (success: boolean ) => void): void {
+    const player: media.AVPlayer = this.playerPool[key];
+    if (player == null) {
+      if (callback != null) {
+        callback(false);
       }
+      return;
     }
 
-  // 注册avplayer回调函数
-  setAVPlayerCallback() {
-    // 状态机变化回调函数
-    avPlayer.on('stateChange', async (state, reason) => {
+    player.on('stateChange', (state, reason) => {
       switch (state) {
-        case 'idle': // 成功调用reset接口后触发该状态机上报
-          Logger.info(TAG, 'stateChange:  AVPlayer state idle called.');
-        /*
-         * 以下代码是为了 调用reset后 无法继续播放
-         * 在Idle 状态设置 url9+ 或 fdSrc9+属性，AVPlayer会进入initialized状态
-         */
-          if (this.filename) {
-            this.setFileDescriptor(this.filename);
-          }
-          avPlayer.prepare();
-
-          break;
-        case 'initialized': // avplayer 设置播放源后触发该状态上报
-          Logger.info(TAG, 'stateChange AVPlayerstate initialized called.');
-          avPlayer.prepare();
-          break;
-        case 'prepared': // prepare调用成功后上报该状态机
-          Logger.info(TAG, 'stateChange AVPlayer state prepared called.');
-          this.setIsLoaded(true); // 音频准备就绪
-          this.isPlaying = false
-        // avPlayer.play(); // 调用播放接口开始播放
+        case 'completed': // 播放结束后触发该状态机上报
+          Logger.info(TAG, 'stateChange AVPlayer state completed Start play callback.');
+          callback?.(true)
+          this.isPlaying = false;
           break;
         case 'playing': // play成功调用后触发该状态机上报
           Logger.info(TAG, 'stateChange AVPlayer state playing called.');
           this.isPlaying = true;
           break;
-        case 'paused': // pause成功调用后触发该状态机上报
-          Logger.info(TAG, 'stateChange AVPlayer state paused called.');
-          this.isPlaying = false
-        //avPlayer.play(); // 再次播放接口开始播放
-          break;
-        case 'completed': // 播放结束后触发该状态机上报
-          Logger.info(TAG, 'stateChange AVPlayer state completed called.');
-          this.isPlaying = false
-        // avPlayer.stop(); //调用播放结束接口
-          break;
-        case 'stopped': // stop接口成功调用后触发该状态机上报
-          Logger.info(TAG, 'stateChange AVPlayer state stopped called.');
-          this.isPlaying = false
-
-        // stop状态重新调用prepare 用于下次可直接播放
-          avPlayer.prepare().then(() => {
-            Logger.info(TAG, 'sound: AVPlayer prepare succeeded.');
-          }, (err: Error) => {
-            Logger.error(TAG, `stateChange: Invoke prepare failed, code is ${err.name}, message is ${err.message}`);
-          });
-
-        //avPlayer.reset(); // 调用reset接口初始化avplayer状态
-          break;
-        case 'released':
-          Logger.info(TAG, 'stateChange AVPlayer state released called.');
-          this.isPlaying = false
-          break;
         default:
+          this.isPlaying = false;
           Logger.info(TAG, 'stateChange AVPlayer state unknown called.');
-          this.isPlaying = false
           break;
       }
     })
 
-    //音量监听
-    avPlayer.on('volumeChange', (vol: number) => {
-      Logger.info(TAG, 'volumeChange success,and new volume is :' + vol);
-      this.volume = vol
-    })
-
-    //监听seek生效的事件
-    avPlayer.on('seekDone', (seekDoneTime: number) => {
-      Logger.info(TAG, 'seekDone success,and seek time is:' + seekDoneTime);
-    })
-
-    //监听播放速度
-    avPlayer.on('speedDone', (speed: number) => {
-      Logger.info(TAG, 'speedDone success,and speed value is:' + speed);
-    })
+    player.play()
   }
 
-  play(onEnd?: (success: boolean) => void): void {
-    Logger.info(TAG, 'sound duration: ' + avPlayer.duration);
-    avPlayer.play()
+  pause(key: number, cb?: () => void): void {
+    const player: media.AVPlayer = this.playerPool[key];
+    if (player != null && this.isPlaying) {
+      player.pause().then(()=>{
+        Logger.info(TAG, `sound: AVPlayer pause success`);
+        cb?.();
+      }, ( err: Error)=>{
+        Logger.error(TAG, `sound: AVPlayer pause error${err.name}, message is ${err.message}`);
+      });
+    }
   }
 
-  pause(cb?: () => void): void {
-    avPlayer.pause();
+  stop(key: number, cb?: () => void): void {
+    const player: media.AVPlayer = this.playerPool[key];
+    if (player != null && this.isPlaying) {
+      player.stop().then(() => {
+        Logger.info(TAG, `sound: AVPlayer pause success`);
+        cb?.();
+      }, (err: Error) => {
+        Logger.error(TAG, `sound: AVPlayer pause error${err.name}, message is ${err.message}`);
+      });
+    }
   }
 
-  stop(cb?: () => void): void {
-    avPlayer.stop();
-  }
-
-  reset(): void {
+  reset(key: number): void {
+    const player: media.AVPlayer = this.playerPool[key];
     try {
-      avPlayer.reset();
+      player.reset();
     } catch (e) {
       Logger.info(TAG, 'sound reset error: ' + JSON.stringify(e));
     }
   }
 
-  release(): void {
-    avPlayer.release();
+  release(key: number): void {
+    const player: media.AVPlayer = this.playerPool[key];
+    player.release();
   }
 
-  getDuration() {
-    return avPlayer.duration;
+  getDuration(key: number) {
+    const player: media.AVPlayer = this.playerPool[key];
+    return player.duration;
   }
 
-  setVolume(volume: number) {
-    //The volume ranges from 0.00 to 1.00
-    avPlayer.setVolume(volume)
+  setVolume(key: number, volume: number) {
+    const player: media.AVPlayer = this.playerPool[key];
+    player.setVolume(volume)
   }
 
-  getVolume() {
-    return this.volume;
+  getCurrentTime(key: number, callback?: (currentPosition: number, isPlaying: boolean)=>void) {
+    const player: media.AVPlayer = this.playerPool[key];
+    if (player == null) {
+      callback?.(-1, false);
+      return;
+    }
+    callback?.(player.currentTime, this.isPlaying);
   }
 
-  getCurrentTime() {
-    return avPlayer.currentTime;
-  }
-
-  setCurrentTime(value: number): void {
-    if (value < 0) value = 0;
-    else if (value > avPlayer.duration) value = avPlayer.duration;
-    avPlayer.seek(value, media.SeekMode.SEEK_PREV_SYNC)
-  }
-
-  getSpeed() {
-    return this.speed;
+  setCurrentTime(key: number, value: number): void {
+    const player: media.AVPlayer = this.playerPool[key];
+    if (value < 0) {
+      value = 0
+    } else if (value > player.duration) {
+      value = player.duration;
+    }
+    player.seek(value, media.SeekMode.SEEK_PREV_SYNC)
   }
 
   // value is : 0,1,2,3,4
-  setSpeed(value: number): void {
+  setSpeed(key:number, value: number): void {
+    const player: media.AVPlayer = this.playerPool[key];
     switch (value) {
-      case 0:
-        this.speed = 0;
-        avPlayer.setSpeed(media.PlaybackSpeed.SPEED_FORWARD_0_75_X)
+      case Speed.ZERO:
+        player.setSpeed(media.PlaybackSpeed.SPEED_FORWARD_0_75_X)
         break
-      case 1:
-        this.speed = 1;
-        avPlayer.setSpeed(media.PlaybackSpeed.SPEED_FORWARD_1_00_X)
+      case Speed.ONE:
+        player.setSpeed(media.PlaybackSpeed.SPEED_FORWARD_1_00_X)
         break
-      case 2:
-        this.speed = 2;
-        avPlayer.setSpeed(media.PlaybackSpeed.SPEED_FORWARD_1_25_X)
+      case Speed.TWO:
+        player.setSpeed(media.PlaybackSpeed.SPEED_FORWARD_1_25_X)
         break
-      case 3:
-        this.speed = 3;
-        avPlayer.setSpeed(media.PlaybackSpeed.SPEED_FORWARD_1_75_X)
+      case Speed.THREE:
+        player.setSpeed(media.PlaybackSpeed.SPEED_FORWARD_1_75_X)
         break
-      case 3:
-        this.speed = 4;
-        avPlayer.setSpeed(media.PlaybackSpeed.SPEED_FORWARD_2_00_X)
+      case Speed.FOUR:
+        player.setSpeed(media.PlaybackSpeed.SPEED_FORWARD_2_00_X)
         break
     }
   }
@@ -254,11 +249,8 @@ export class AVPlayerController {
 
   }
 
-  getNumberOfLoops() {
-    return avPlayer.loop;
-  }
-
-  setNumberOfLoops(value: boolean): void {
-    avPlayer.loop = value
+  setNumberOfLoops(key:number, value: boolean): void {
+    const player: media.AVPlayer = this.playerPool[key];
+    player.loop = value
   }
 }

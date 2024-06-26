@@ -31,7 +31,7 @@ var RNSound = TurboModuleRegistry?TurboModuleRegistry.get('RNCSound'): ReactNati
 var IsAndroid = RNSound.IsAndroid;
 var IsWindows = RNSound.IsWindows;
 var resolveAssetSource = require("react-native/Libraries/Image/resolveAssetSource");
-var eventEmitter = new ReactNative.NativeEventEmitter();
+var eventEmitter = new ReactNative.NativeEventEmitter(RNSound);
 
 var nextKey = 0;
 
@@ -69,7 +69,6 @@ function Sound(filename, basePath, onError, options) {
     onError = basePath;
   } else {
     this._filename = basePath ? basePath + '/' + filename : filename;
-
     if (IsAndroid && !basePath && isRelativePath(filename)) {
       this._filename = filename.toLowerCase().replace(/\.[^.]+$/, '');
     }
@@ -109,113 +108,76 @@ function Sound(filename, basePath, onError, options) {
   this._numberOfLoops = 0;
   this._speed = 1;
   this._pitch = 1;
-
-  if(IsAndroid|| IsWindows){
-    RNSound.prepare(this._filename, this._key, options || {}, (error, props) => {
-      if (props) {
-        if (typeof props.duration === 'number') {
-          this._duration = props.duration;
-        }
-        if (typeof props.numberOfChannels === 'number') {
-          this._numberOfChannels = props.numberOfChannels;
-        }
+  
+  RNSound.prepare(this._filename, this._key, options || {}, (error, props) => {
+    if (props) {
+      if (typeof props.duration === 'number') {
+        this._duration = props.duration;
       }
-      if (error === null) {
-        this._loaded = true;
-        this.registerOnPlay();
+      if (typeof props.numberOfChannels === 'number') {
+        this._numberOfChannels = props.numberOfChannels;
       }
-      onError && onError(error, props);
-    });
-  } else {
-    RNSound.prepare(this._filename);
-  }
-
+    }
+    if (error === null) {
+      this._loaded = true;
+      this.registerOnPlay();
+    }
+    onError && onError(error, props);
+  });
 }
 
 Sound.prototype.isLoaded = function() {
-   if(IsAndroid||IsWindows){
-      return this._loaded;
-   }else {
-    RNSound.isLoaded();
-   }
-  
+  return this._loaded;
 };
 
-
-  Sound.prototype.play = function(onEnd) {
-    if(IsAndroid||IsWindows){
-      if (this._loaded) {
-        RNSound.play(this._key, (successfully) => onEnd && onEnd(successfully));
-      } else {
-        onEnd && onEnd(false);
-      }
-    }else{
-      RNSound.play();
-    }
-    return this;
-  };
-
-
+Sound.prototype.play = function(onEnd) {
+  if (this._loaded) {
+    RNSound.play(this._key, (successfully) => onEnd && onEnd(successfully));
+  } else {
+    onEnd && onEnd(false);
+  }
+  return this;
+};
 
 Sound.prototype.pause = function(callback) {
-  if(IsAndroid||IsWindows){
-    if (this._loaded) {
-      RNSound.pause(this._key, () => {
-        this._playing = false;
-        callback && callback();
-      });
-    }
-  }else{
-    RNSound.pause();
+  if (this._loaded) {
+    RNSound.pause(this._key, () => {
+      this._playing = false;
+      callback && callback();
+    });
   }
-
   return this;
 };
 
 Sound.prototype.stop = function(callback) {
-  if(IsAndroid||IsWindows){
-    if (this._loaded) {
-      RNSound.stop(this._key, () => {
-        this._playing = false;
-        callback && callback();
-      });
-    }
-  }else{
-    RNSound.stop();
+  if (this._loaded) {
+    RNSound.stop(this._key, () => {
+      this._playing = false;
+      callback && callback();
+    });
   }
-
   return this;
 };
 
 Sound.prototype.reset = function() {
-  if(IsAndroid||IsWindows){
-    if (this._loaded && IsAndroid) {
-      RNSound.reset(this._key);
-      this._playing = false;
-    }
-  }else{
-    RNSound.reset();
+  if (this._loaded && IsAndroid) {
+    RNSound.reset(this._key);
+    this._playing = false;
   }
-
   return this;
 };
 
 Sound.prototype.release = function() {
-  if(IsAndroid||IsWindows){
-    if (this._loaded) {
-      RNSound.release(this._key);
-      this._loaded = false;
-      if (!IsWindows) {
-        if (this.onPlaySubscription != null) {
-          this.onPlaySubscription.remove();
-          this.onPlaySubscription = null;
-        }
+  if (this._loaded) {
+    RNSound.release(this._key);
+    this._loaded = false;
+    if (!IsWindows) {
+      if (this.onPlaySubscription != null) {
+        this.onPlaySubscription.remove();
+        this.onPlaySubscription = null;
       }
     }
-  }else{
-    RNSound.release();
   }
-
   return this;
 };
 
@@ -224,38 +186,20 @@ Sound.prototype.getFilename = function() {
 };
 
 Sound.prototype.getDuration = function() {
-  if(IsAndroid||IsWindows){
-    return this._duration;
-  }else{
-    return RNSound.getDuration();
-  }
-  
+  return this._duration;
 };
 
 Sound.prototype.getNumberOfChannels = function() {
-  if(IsAndroid||IsWindows){
-    return this._numberOfChannels;
-  }else {
-    return RNSound.getNumberOfChannels();
-  }
+  return this._numberOfChannels;
  
 };
 
 Sound.prototype.getVolume = function() {
-    if(IsAndroid||IsWindows){
-      return this._volume;
-    }else {
-      return RNSound.getVolume();
-    }
- 
+  return this._volume;
 };
 
 Sound.prototype.getSpeed = function() {
-  if(IsAndroid||IsWindows){
-    return this._speed;
-  }else {
-    return RNSound.getSpeed();
-  }
+  return this._speed;
 };
 
 Sound.prototype.getPitch = function() {
@@ -263,19 +207,14 @@ Sound.prototype.getPitch = function() {
 };
 
 Sound.prototype.setVolume = function(value) {
-  if(IsAndroid||IsWindows){
-      this._volume = value;
-      if (this._loaded) {
-        if (IsAndroid) {
-          setAndroidVolumes(this)
-        } else {
-          RNSound.setVolume(this._key, value);
-        }
-      }
-    }else{
-      RNSound.setVolume(value);
+  this._volume = value;
+  if (this._loaded) {
+    if (IsAndroid) {
+      setAndroidVolumes(this)
+    } else {
+      RNSound.setVolume(this._key, value);
     }
-
+  }
   return this;
 };
 
@@ -295,7 +234,7 @@ Sound.prototype.setPan = function(value) {
 
 Sound.prototype.getSystemVolume = function(callback) {
   if(!IsWindows) {
-    return RNSound.getSystemVolume(callback);
+    RNSound.getSystemVolume(callback);
   }
   return this;
 };
@@ -328,55 +267,35 @@ Sound.prototype.setNumberOfLoops = function(value) {
 };
 
 Sound.prototype.setSpeed = function(value) {
-  if(IsAndroid||IsWindows){
-    this._speed = value;
-    if (this._loaded) {
-      if (!IsWindows) {
-        RNSound.setSpeed(this._key, value);
-      }
+  this._speed = value;
+  if (this._loaded) {
+    if (!IsWindows) {
+      RNSound.setSpeed(this._key, value);
     }
-  }else{
-    RNSound.setSpeed(value);
   }
   return this;
 };
 
 Sound.prototype.setPitch = function(value) {
-  if(IsAndroid||IsWindows){
-    this._pitch = value;
-    if (this._loaded) {
-      if (IsAndroid) {
-        RNSound.setPitch(this._key, value);
-      }
+  this._pitch = value;
+  if (this._loaded) {
+    if (IsAndroid) {
+      RNSound.setPitch(this._key, value);
     }
-  }else{
-    RNSound.setPitch(value);
   }
-
   return this;
 };
 
 Sound.prototype.getCurrentTime = function(callback) {
-  if(IsAndroid||IsWindows){
-    if (this._loaded) {
-      RNSound.getCurrentTime(this._key, callback);
-    }
-  }else{
-    return RNSound.getCurrentTime();
+  if (this._loaded) {
+    RNSound.getCurrentTime(this._key, callback);
   }
- 
 };
 
 Sound.prototype.setCurrentTime = function(value) {
-  if(IsAndroid||IsWindows){
-    if (this._loaded) {
-      RNSound.setCurrentTime(this._key, value);
-    }    
-  }else{
-    RNSound.setCurrentTime(value);
+  if (this._loaded) {
+    RNSound.setCurrentTime(this._key, value);
   }
-
-  
   return this;
 };
 
@@ -396,12 +315,7 @@ Sound.prototype.setCategory = function(value) {
 }
 
 Sound.prototype.isPlaying = function() {
-  if(IsAndroid||IsWindows){
-    return this._playing;
-  }else{
-    return RNSound.isPlaying();
-  }
-  
+  return this._playing;
 }
 
 Sound.enable = function(enabled) {

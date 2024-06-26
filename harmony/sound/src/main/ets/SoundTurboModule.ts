@@ -30,9 +30,8 @@ const TAG: string = "[RNOH] Sound"
 
 export class SoundTurboModule extends TurboModule {
   controller: AVPlayerController = new AVPlayerController()
-
-  prepare(filename: string) {
-      this.controller.setFileDescriptor(filename)
+  prepare(filename: string, key: number, option: object, callBack: ()=>void) {
+      this.controller.prepare(filename, key, option, callBack)
   }
 
   constructor(protected ctx: TurboModuleContext) {
@@ -44,94 +43,55 @@ export class SoundTurboModule extends TurboModule {
     this.controller.setActive(active)
   }
 
-  isLoaded(): boolean {
-    Logger.info(TAG, 'sound isLoaded : '+ this.controller.getIsLoaded());
-    return this.controller.getIsLoaded()
+  getDuration(key:number): number {
+    return this.controller.getDuration(key);
   }
 
-  getDuration(): number {
-    Logger.info(TAG, 'sound getDuration : '+ this.controller.getDuration());
-    return this.controller.getDuration();
+  play(key, onEnd?: (success: boolean) => void): void {
+    this.controller.play(key, onEnd);
   }
 
-
-  play(onEnd?: (success: boolean) => void): void {
-    Logger.info(TAG, 'sound  : '+ 'play start');
-    this.controller.play();
+  pause(key, cb?: () => void): void {
+    this.controller.pause(key, cb);
   }
 
-  pause(cb?: () => void): void {
-    Logger.info(TAG, 'sound  : '+ 'pause success');
-    this.controller.pause();
+  stop(key, cb?: () => void): void {
+    this.controller.stop(key, cb);
   }
 
-  stop(cb?: () => void): void {
-    Logger.info(TAG, 'sound  : '+ 'stop success');
-    this.controller.stop();
+  reset(key): void {
+    this.controller.reset(key);
   }
 
-  reset(): void {
-    Logger.info(TAG, 'sound  : '+ 'reset success');
-    this.controller.reset();
+  release(key): void {
+    this.controller.release(key);
   }
 
-  release(): void {
-    Logger.info(TAG, 'sound  : '+ 'release success');
-    this.controller.release();
+  setVolume(key: number, value: number): void {
+    this.controller.setVolume(key, value)
   }
 
-  getVolume(): number {
-    Logger.info(TAG, 'sound getVolume : '+ this.controller.getVolume());
-    return this.controller.getVolume();
+  getCurrentTime(key: number, callBack?: (currentPosition: number, isPlaying: boolean) => void): void {
+    return this.controller.getCurrentTime(key, callBack);
   }
 
-  setVolume(value: number): void {
-    Logger.info(TAG, 'sound setVolume : '+ value);
-    this.controller.setVolume(value)
+  setCurrentTime(key: number, value: number): void {
+    this.controller.setCurrentTime(key, value);
   }
 
-  getCurrentTime(): number {
-    Logger.info(TAG, 'sound getCurrentTime : '+ this.controller.getCurrentTime());
-    return this.controller.getCurrentTime();
+  setSpeed(key: number, value: number): void {
+    this.controller.setSpeed(key, value);
   }
 
-  setCurrentTime(value: number): void {
-    if (value < 0) value = 0;
-    else if (value > this.controller.getDuration()) value = this.controller.getDuration();
-    Logger.info(TAG, 'sound setCurrentTime : '+ value);
-    this.controller.setCurrentTime(value);
-  }
-
-  getSpeed(): number {
-    Logger.info(TAG, 'sound getSpeed : '+ this.controller.getSpeed());
-    return this.controller.getSpeed();
-  }
-
-  setSpeed(value: number): void {
-    Logger.info(TAG, 'sound setSpeed : '+ value);
-    this.controller.setSpeed(value);
-  }
-
-  isPlaying(): boolean {
-    Logger.info(TAG, 'sound isPlaying : '+ this.controller.isPlaying);
-    return this.controller.isPlaying;
-  }
-
-  getNumberOfLoops() {
-    Logger.info(TAG, 'sound getNumberOfLoops : '+ this.controller.getNumberOfLoops());
-    return this.controller.getNumberOfLoops();
-  }
-
-  setNumberOfLoops(value: boolean): void {
-    Logger.info(TAG, 'sound setNumberOfLoops : '+ value);
-    this.controller.setNumberOfLoops(value)
+  setNumberOfLoops(key:number, value: boolean): void {
+    this.controller.setNumberOfLoops(key, value)
   }
 
   addListener(eventName: string) {
-    Logger.info(TAG, 'addListener : '+ eventName);
+    Logger.info(TAG, `addListener : ${eventName}`);
   }
 
   removeListeners(count: number) {
-    Logger.info(TAG, 'removeListeners : '+ count);
+    Logger.info(TAG, `removeListeners : ${count}`);
   }
 }
