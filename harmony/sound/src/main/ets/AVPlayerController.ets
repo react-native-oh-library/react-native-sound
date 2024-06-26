@@ -52,7 +52,7 @@ enum Speed{
 
 export class AVPlayerController {
   private audioManager = audio.getAudioManager();
-  public playerPool = new Object();
+  public playerPool = new Map<Object, media.AVPlayer>();
   public isPlaying: boolean = false;
   async prepare(fileName: string, key: number, option: object, callBack: (error: E, props:PrepareProps) => void) {
     const mediaPlayer: media.AVPlayer = await media.createAVPlayer();
@@ -105,7 +105,7 @@ export class AVPlayerController {
       return;
     }
 
-    this.playerPool[key] = mediaPlayer
+    this.playerPool.set(key, mediaPlayer)
     //设置默认音量
     avPlayer.setVolume(1.00);
     //设置默认速度
@@ -119,7 +119,7 @@ export class AVPlayerController {
   }
 
   play(key: number, callback?: (success: boolean ) => void): void {
-    const player: media.AVPlayer = this.playerPool[key];
+    const player: media.AVPlayer | undefined = this.playerPool.get(key);
     if (player == null) {
       if (callback != null) {
         callback(false);
@@ -149,7 +149,7 @@ export class AVPlayerController {
   }
 
   pause(key: number, cb?: () => void): void {
-    const player: media.AVPlayer = this.playerPool[key];
+    const player: media.AVPlayer | undefined = this.playerPool.get(key);
     if (player != null && this.isPlaying) {
       player.pause().then(()=>{
         Logger.info(TAG, `sound: AVPlayer pause success`);
@@ -161,7 +161,7 @@ export class AVPlayerController {
   }
 
   stop(key: number, cb?: () => void): void {
-    const player: media.AVPlayer = this.playerPool[key];
+    const player: media.AVPlayer | undefined = this.playerPool.get(key);
     if (player != null && this.isPlaying) {
       player.stop().then(() => {
         Logger.info(TAG, `sound: AVPlayer pause success`);
@@ -173,31 +173,31 @@ export class AVPlayerController {
   }
 
   reset(key: number): void {
-    const player: media.AVPlayer = this.playerPool[key];
+    const player: media.AVPlayer | undefined = this.playerPool.get(key);
     try {
-      player.reset();
+      player?.reset();
     } catch (e) {
       Logger.info(TAG, 'sound reset error: ' + JSON.stringify(e));
     }
   }
 
   release(key: number): void {
-    const player: media.AVPlayer = this.playerPool[key];
-    player.release();
+    const player: media.AVPlayer | undefined = this.playerPool.get(key);
+    player?.release();
   }
 
   getDuration(key: number) {
-    const player: media.AVPlayer = this.playerPool[key];
-    return player.duration;
+    const player: media.AVPlayer | undefined = this.playerPool.get(key);
+    return player?.duration;
   }
 
   setVolume(key: number, volume: number) {
-    const player: media.AVPlayer = this.playerPool[key];
-    player.setVolume(volume)
+    const player: media.AVPlayer | undefined = this.playerPool.get(key);
+    player?.setVolume(volume)
   }
 
   getCurrentTime(key: number, callback?: (currentPosition: number, isPlaying: boolean)=>void) {
-    const player: media.AVPlayer = this.playerPool[key];
+    const player: media.AVPlayer | undefined = this.playerPool.get(key);
     if (player == null) {
       callback?.(-1, false);
       return;
@@ -206,33 +206,36 @@ export class AVPlayerController {
   }
 
   setCurrentTime(key: number, value: number): void {
-    const player: media.AVPlayer = this.playerPool[key];
-    if (value < 0) {
-      value = 0
-    } else if (value > player.duration) {
-      value = player.duration;
+    const player: media.AVPlayer | undefined = this.playerPool.get(key);
+    if(player !== null && player !== undefined){
+      if (value < 0) {
+        value = 0
+      } else if (value > player.duration) {
+        value = player.duration;
+      }
+      player.seek(value, media.SeekMode.SEEK_PREV_SYNC)
     }
-    player.seek(value, media.SeekMode.SEEK_PREV_SYNC)
+
   }
 
   // value is : 0,1,2,3,4
   setSpeed(key:number, value: number): void {
-    const player: media.AVPlayer = this.playerPool[key];
+    const player: media.AVPlayer | undefined = this.playerPool.get(key);
     switch (value) {
       case Speed.ZERO:
-        player.setSpeed(media.PlaybackSpeed.SPEED_FORWARD_0_75_X)
+        player?.setSpeed(media.PlaybackSpeed.SPEED_FORWARD_0_75_X)
         break
       case Speed.ONE:
-        player.setSpeed(media.PlaybackSpeed.SPEED_FORWARD_1_00_X)
+        player?.setSpeed(media.PlaybackSpeed.SPEED_FORWARD_1_00_X)
         break
       case Speed.TWO:
-        player.setSpeed(media.PlaybackSpeed.SPEED_FORWARD_1_25_X)
+        player?.setSpeed(media.PlaybackSpeed.SPEED_FORWARD_1_25_X)
         break
       case Speed.THREE:
-        player.setSpeed(media.PlaybackSpeed.SPEED_FORWARD_1_75_X)
+        player?.setSpeed(media.PlaybackSpeed.SPEED_FORWARD_1_75_X)
         break
       case Speed.FOUR:
-        player.setSpeed(media.PlaybackSpeed.SPEED_FORWARD_2_00_X)
+        player?.setSpeed(media.PlaybackSpeed.SPEED_FORWARD_2_00_X)
         break
     }
   }
@@ -250,7 +253,9 @@ export class AVPlayerController {
   }
 
   setNumberOfLoops(key:number, value: boolean): void {
-    const player: media.AVPlayer = this.playerPool[key];
-    player.loop = value
+    const player: media.AVPlayer | undefined = this.playerPool.get(key);
+    if(player !== undefined){
+      player.loop = value
+    }
   }
 }
