@@ -54,7 +54,7 @@ export class AVPlayerController {
   private audioManager = audio.getAudioManager();
   public playerPool = new Map<Object, media.AVPlayer>();
   public isPlaying: boolean = false;
-  async prepare(fileName: string, key: number, option: object, callBack: (error: E, props:PrepareProps) => void) {
+  async prepare(fileName: string, key: number, option: object, callBack: (error: E | null, props:PrepareProps | null) => void) {
     const mediaPlayer: media.AVPlayer = await media.createAVPlayer();
     let fileUrl: string = '';
     if(fileName.startsWith('asset')){  //在npm run dev起服务的时候 用require('./frog.wav') 引入的文件
@@ -202,7 +202,7 @@ export class AVPlayerController {
     player?.setVolume(volume)
   }
 
-  getCurrentTime(key: number, callback?: (currentPosition: number, isPlaying: boolean)=>void) {
+  getCurrentTime(key: number, callback?: (currentPosition: number | undefined, isPlaying: boolean)=>void) {
     const player: media.AVPlayer | undefined = this.playerPool.get(key);
     if (player === null && player === undefined) {
       callback?.(-1, false);
