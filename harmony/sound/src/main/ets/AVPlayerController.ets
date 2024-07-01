@@ -56,14 +56,18 @@ export class AVPlayerController {
   public isPlaying: boolean = false;
   async prepare(fileName: string, key: number, option: object, callBack: (error: E, props:PrepareProps) => void) {
     const mediaPlayer: media.AVPlayer = await media.createAVPlayer();
-    let filename: string = '';
-    if(fileName.startsWith('asset')){
-      filename = fileName.split('//')[1];
+    let fileUrl: string = '';
+    if(fileName.startsWith('asset')){  //在npm run dev起服务的时候 用require('./frog.wav') 引入的文件
+      fileUrl = fileName.split('//')[1];
       let context = getContext(this) as common.UIAbilityContext;
-      let fileDescriptor = await context.resourceManager.getRawFd(`assets/${filename}`);
+      let fileDescriptor = await context.resourceManager.getRawFd(`assets/${fileUrl}`);
       mediaPlayer.fdSrc = fileDescriptor;
-    } else {
+    } else if(fileName.startsWith("http://") || fileName.startsWith("https://")){//音频资源是网络资源和npm run start起服务的时候 用require('./frog.wav') 引入的文件
       mediaPlayer.url = fileName;
+    } else {   //资源在resources/rawfile 下的资源  url: 'whoosh.mp3',
+      let context = getContext(this) as common.UIAbilityContext;
+      let fileDescriptor = await context.resourceManager.getRawFd(fileName);
+      mediaPlayer.fdSrc = fileDescriptor;
     }
 
     const mediaPrepare = () => {
@@ -71,10 +75,8 @@ export class AVPlayerController {
         const props:PrepareProps = {
           duration:mediaPlayer.duration,
         }
-        Logger.info(TAG, `avPlay prepare success`);
         callBack(null, props);
       },(err: BusinessError)=>{
-        Logger.info(TAG, `avPlay prepare error:${err.name} message ${err.message}`);
         const e: E = {
           code: -1,
           message: `avPlay prepare error:${err.name} message ${err.message}}`
@@ -84,8 +86,12 @@ export class AVPlayerController {
     }
 
     mediaPlayer.on('stateChange', async (state, reason) => {
-      Logger.info(TAG, `stateChange128:  AVPlayer state idle called${state}`);
+      Logger.info(TAG, `stateChange128:  AVPlayer state idle called ${state}`);
       switch (state) {
+        case 'idle':
+          Logger.info(TAG, 'stateChange AVPlayerstate initialized called. idle');
+          mediaPrepare()
+          break;
         case 'initialized': // avplayer 设置播放源后触发该状态上报
           Logger.info(TAG, 'stateChange AVPlayerstate initialized called.');
           mediaPrepare()
