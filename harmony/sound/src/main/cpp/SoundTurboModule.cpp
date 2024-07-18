@@ -157,6 +157,12 @@ static jsi::Value __hostFunction_NativeSoundTurboModuleSpecJSI_removeListeners(j
     return static_cast<ArkTSTurboModule &>(turboModule).call(rt, "removeListeners", args, count);
 }
 
+static jsi::Value __hostFunction_NativeSoundTurboModuleSpecJSI_setCategory(jsi::Runtime &rt,
+                                                                                react::TurboModule &turboModule,
+                                                                                const jsi::Value *args, size_t count) {
+    return static_cast<ArkTSTurboModule &>(turboModule).call(rt, "setCategory", args, count);
+}
+
 NativeSoundTurboModuleSpecJSI::NativeSoundTurboModuleSpecJSI(const ArkTSTurboModule::Context ctx,
                                                              const std::string name)
     : ArkTSTurboModule(ctx, name) {
@@ -180,5 +186,6 @@ NativeSoundTurboModuleSpecJSI::NativeSoundTurboModuleSpecJSI(const ArkTSTurboMod
     methodMap_["prepare"] = MethodMetadata{1, __hostFunction_NativeSoundTurboModuleSpecJSI_prepare};
     methodMap_["addListener"] = MethodMetadata{1, __hostFunction_NativeSoundTurboModuleSpecJSI_addListener};
     methodMap_["removeListeners"] = MethodMetadata{1, __hostFunction_NativeSoundTurboModuleSpecJSI_removeListeners};
+    methodMap_["setCategory"] = MethodMetadata{1, __hostFunction_NativeSoundTurboModuleSpecJSI_setCategory};
 }
 

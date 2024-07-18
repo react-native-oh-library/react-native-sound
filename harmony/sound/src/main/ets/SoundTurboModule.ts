@@ -27,7 +27,7 @@ import { AVPlayerController } from './ts'
 import Logger from './Logger';
 
 const TAG: string = "[RNOH] Sound"
-
+type AVAudioSessionCategory = 'Ambient' | 'SoloAmbient' | 'Playback' | 'Record' | 'PlayAndRecord' | 'AudioProcessing' | 'MultiRoute' | 'Alarm'
 export class SoundTurboModule extends TurboModule {
   controller: AVPlayerController = new AVPlayerController()
   prepare(filename: string, key: number, option: object, callBack: ()=>void) {
@@ -93,5 +93,10 @@ export class SoundTurboModule extends TurboModule {
 
   removeListeners(count: number) {
     Logger.info(TAG, `removeListeners : ${count}`);
+  }
+  
+  
+  setCategory(category: AVAudioSessionCategory, mixWithOthers?: boolean): void {
+    Logger.info(TAG, `setCategory value: ${category} mixWithOthers: ${mixWithOthers}`);
   }
 }
