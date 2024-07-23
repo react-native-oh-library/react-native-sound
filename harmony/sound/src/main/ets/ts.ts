@@ -21,5 +21,27 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+export enum AvplayerStatus {
+  IDLE = 'idle',
+  INITIALIZED = 'initialized',
+  PREPARED = 'prepared',
+  PLAYING = 'playing',
+  PAUSED = 'paused',
+  COMPLETED = 'completed',
+  STOPPED = 'stopped',
+  RELEASED = 'released',
+  ERROR = 'error'
+}
 
+export enum AvplayerSessionCategory {
+  AMBIENT = 'Ambient',
+  SOLOAMBIENT = 'SoloAmbient',
+  PLAYBACK = 'Playback',
+  RECORD = 'Record',
+  PLAYANDRECORD = 'PlayAndRecord',
+  COMPLETED = 'AudioProcessing',
+  AUDIOPROCESSING = 'MultiRoute',
+  ALARM = 'Alarm',
+}
+export type AVAudioSessionCategory = 'Ambient' | 'SoloAmbient' | 'Playback' | 'Record' | 'PlayAndRecord' | 'AudioProcessing' | 'MultiRoute' | 'Alarm'
 export * from './AVPlayerController';
