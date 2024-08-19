@@ -295,22 +295,8 @@ export class AVPlayerController {
   // value is : 0,1,2,3,4
   setSpeed(key:number, value: number): void {
     const player: media.AVPlayer | undefined = this.playerPool.get(key);
-    switch (value) {
-      case Speed.ZERO:
-        player?.setSpeed(media.PlaybackSpeed.SPEED_FORWARD_0_75_X)
-        break
-      case Speed.ONE:
-        player?.setSpeed(media.PlaybackSpeed.SPEED_FORWARD_1_00_X)
-        break
-      case Speed.TWO:
-        player?.setSpeed(media.PlaybackSpeed.SPEED_FORWARD_1_25_X)
-        break
-      case Speed.THREE:
-        player?.setSpeed(media.PlaybackSpeed.SPEED_FORWARD_1_75_X)
-        break
-      case Speed.FOUR:
-        player?.setSpeed(media.PlaybackSpeed.SPEED_FORWARD_2_00_X)
-        break
+    if(player !== null && player !== undefined){
+      player?.setSpeed(value)
     }
   }
 
