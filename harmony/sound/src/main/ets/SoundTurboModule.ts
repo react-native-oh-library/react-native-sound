@@ -48,7 +48,8 @@ export class SoundTurboModule extends TurboModule {
   }
 
   play(key, onEnd?: (success: boolean) => void): void {
-    this.controller.play(key, onEnd);
+    this.controller.play(key, this.ctx, onEnd );
+
   }
 
   pause(key, cb?: () => void): void {

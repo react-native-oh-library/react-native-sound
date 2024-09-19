@@ -108,10 +108,16 @@ export class AVPlayerController {
     if (this.category != null) {
       switch (this.category) {
         case AvplayerSessionCategory.AMBIENT: //游戏模式
-          mediaPlayer.audioRendererInfo = {content:audio.ContentType.CONTENT_TYPE_MUSIC, usage: audio.StreamUsage.STREAM_USAGE_GAME, rendererFlags: 0}
+          mediaPlayer.audioRendererInfo = {
+            usage: audio.StreamUsage.STREAM_USAGE_GAME,
+            rendererFlags: 0
+          }
           break;
         case AvplayerSessionCategory.PLAYANDRECORD:
-          mediaPlayer.audioRendererInfo = {content:audio.ContentType.CONTENT_TYPE_MUSIC, usage: audio.StreamUsage.STREAM_USAGE_VOICE_COMMUNICATION, rendererFlags: 0}
+          mediaPlayer.audioRendererInfo = {
+            usage: audio.StreamUsage.STREAM_USAGE_VOICE_COMMUNICATION,
+            rendererFlags: 0
+          }
           break;
         case AvplayerSessionCategory.PLAYBACK:
           this.createSession()
@@ -154,11 +160,9 @@ export class AVPlayerController {
     }
     
     mediaPlayer.on('stateChange', async (state, reason) => {
-      Logger.info(TAG, `stateChange128:  AVPlayer state idle called ${state}`);
       switch (state) {
         case AvplayerStatus.IDLE:
           Logger.info(TAG, 'stateChange AVPlayerstate initialized called. idle');
-          this.mediaPrepare(mediaPlayer,callBack)
           break;
         case AvplayerStatus.INITIALIZED: // avplayer 设置播放源后触发该状态上报
           this.setAudioRendererInfo(mediaPlayer);
@@ -192,7 +196,7 @@ export class AVPlayerController {
     })
   }
 
-  play(key: number, callback?: (success: boolean ) => void): void {
+  play(key: number, ctx, callback?: (success: boolean ) => void): void {
     const player: media.AVPlayer | undefined = this.playerPool.get(key);
     if (player === null && player === undefined) {
       if (callback != null) {
@@ -200,26 +204,30 @@ export class AVPlayerController {
       }
       return;
     }
-
     player?.on('stateChange', (state, reason) => {
       switch (state) {
         case AvplayerStatus.COMPLETED: // 播放结束后触发该状态机上报
-          Logger.info(TAG, 'stateChange AVPlayer state completed Start play callback.');
+          ctx.rnInstance.emitDeviceEvent("onPlayChange", { isPlaying:false, playerKey:key })
           callback?.(true)
           this.isPlaying = false;
           break;
         case AvplayerStatus.PLAYING: // play成功调用后触发该状态机上报
-          Logger.info(TAG, 'stateChange AVPlayer state playing called.');
           this.isPlaying = true;
           break;
         default:
           this.isPlaying = false;
-          Logger.info(TAG, 'stateChange AVPlayer state unknown called.');
           break;
       }
     })
 
-    player?.play()
+    player?.play((err: BusinessError) => {
+      if (err) {
+        ctx.rnInstance.emitDeviceEvent("onPlayChange", { isPlaying:false, playerKey:key })
+      } else {
+        ctx.rnInstance.emitDeviceEvent("onPlayChange", { isPlaying:true, playerKey:key })
+      }
+    })
+
   }
 
   pause(key: number, cb?: () => void): void {
