@@ -207,8 +207,10 @@ export class AVPlayerController {
     player?.on('stateChange', (state, reason) => {
       switch (state) {
         case AvplayerStatus.COMPLETED: // 播放结束后触发该状态机上报
-          ctx.rnInstance.emitDeviceEvent("onPlayChange", { isPlaying:false, playerKey:key })
-          callback?.(true)
+          ctx.rnInstance.emitDeviceEvent("onPlayChange", { isPlaying:false, playerKey:key });
+          setTimeout(()=>{
+            callback?.(true);
+          },1000)
           this.isPlaying = false;
           break;
         case AvplayerStatus.PLAYING: // play成功调用后触发该状态机上报
@@ -332,4 +334,5 @@ export class AVPlayerController {
     this.mixWithOthers = mixWithOthers
   }
 }
+
 
