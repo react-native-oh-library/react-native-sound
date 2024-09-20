@@ -1,6 +1,6 @@
 {
     "name": "@react-native-oh-tpl/react-native-sound",
-    "version": "0.11.2-0.0.10",
+    "version": "0.11.2-0.0.11",
     "description": "React Native module for playing sound clips on iOS, Android, and Windows",
     "main": "index.ets",
     "author": "",
