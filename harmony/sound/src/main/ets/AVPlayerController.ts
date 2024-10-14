@@ -29,6 +29,7 @@ import { BusinessError } from '@kit.BasicServicesKit';
 import { backgroundTaskManager } from '@kit.BackgroundTasksKit';
 import { wantAgent, WantAgent } from '@kit.AbilityKit';
 import { AbilityConstant, Want } from '@kit.AbilityKit';
+import fs from '@ohos.file.fs';
 import Logger from './Logger';
 import { AVAudioSessionCategory, AvplayerStatus,AvplayerSessionCategory } from './ts';
 const TAG: string = "[RNOH] Sound"
@@ -154,6 +155,9 @@ export class AVPlayerController {
       mediaPlayer.fdSrc = fileDescriptor;
     } else if(fileName.startsWith("http://") || fileName.startsWith("https://")){//音频资源是网络资源和npm run start起服务的时候 用require('./frog.wav') 引入的文件
       mediaPlayer.url = fileName;
+    }  else if (fileName.startsWith('/data')){
+      let resFile = fs.openSync(fileName, fs.OpenMode.READ_ONLY)
+      mediaPlayer.url = `fd://${resFile.fd}`;
     } else {   //资源在resources/rawfile 下的资源  url: 'whoosh.mp3',
       let fileDescriptor = await this.context.resourceManager.getRawFd(fileName);
       mediaPlayer.fdSrc = fileDescriptor;
