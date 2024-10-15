@@ -61,4 +61,4 @@ class Logger {
   }
 }
 
-export default new Logger('RNCSlider', 0xFF00, false)
+export default new Logger('RNCSlider', 0xFF00, true)
