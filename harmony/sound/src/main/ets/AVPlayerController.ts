@@ -31,7 +31,8 @@ import { wantAgent, WantAgent } from '@kit.AbilityKit';
 import { AbilityConstant, Want } from '@kit.AbilityKit';
 import fs from '@ohos.file.fs';
 import Logger from './Logger';
-import { AVAudioSessionCategory, AvplayerStatus,AvplayerSessionCategory } from './ts';
+import { AVAudioSessionCategory, AvplayerStatus, AvplayerSessionCategory } from './ts';
+
 const TAG: string = "[RNOH] Sound"
 
 export interface PrepareProps {
@@ -44,7 +45,7 @@ interface E {
   message: string
 }
 
-enum Speed{
+enum Speed {
   ZERO = 0,
   ONE = 1,
   TWO = 2,
@@ -56,9 +57,10 @@ export class AVPlayerController {
   private audioManager = audio.getAudioManager();
   public playerPool = new Map<Object, media.AVPlayer>();
   public isPlaying: boolean = false;
-  private category:AVAudioSessionCategory = "Playback";
-  private mixWithOthers:Boolean = true;
+  private category: AVAudioSessionCategory = "Playback";
+  private mixWithOthers: Boolean = true;
   private context = getContext(this);
+  private previousSrc: fs.File | string | undefined = undefined
 
   //创建后台长任务
   onCreate(want: Want, launchParam: AbilityConstant.LaunchParam) {
@@ -83,7 +85,7 @@ export class AVPlayerController {
       wantAgent.getWantAgent(wantAgentInfo).then((wantAgentObj: WantAgent) => {
         try {
           backgroundTaskManager.startBackgroundRunning(this.context,
-            backgroundTaskManager.BackgroundMode.LOCATION, wantAgentObj, (error: BusinessError, data: void)=>{
+            backgroundTaskManager.BackgroundMode.LOCATION, wantAgentObj, (error: BusinessError, data: void) => {
 
             })
         } catch (error) {
@@ -99,13 +101,13 @@ export class AVPlayerController {
   // 创建session
   async createSession() {
     let type: AVSessionManager.AVSessionType = 'audio';
-    let session = await AVSessionManager.createAVSession(this.context,'SESSION_NAME', type);
+    let session = await AVSessionManager.createAVSession(this.context, 'SESSION_NAME', type);
 
     // 激活接口要在元数据、控制命令注册完成之后再执行
     await session.activate();
   }
 
-  setAudioRendererInfo(mediaPlayer: media.AVPlayer){
+  setAudioRendererInfo(mediaPlayer: media.AVPlayer) {
     if (this.category != null) {
       switch (this.category) {
         case AvplayerSessionCategory.AMBIENT: //游戏模式
@@ -131,13 +133,13 @@ export class AVPlayerController {
     }
   }
 
-  mediaPrepare(mediaPlayer: media.AVPlayer, callBack: (error: E | null, props:PrepareProps | null) => void){
-    mediaPlayer.prepare().then(()=>{
-      const props:PrepareProps = {
-        duration:mediaPlayer.duration,
+  mediaPrepare(mediaPlayer: media.AVPlayer, callBack: (error: E | null, props: PrepareProps | null) => void) {
+    mediaPlayer.prepare().then(() => {
+      const props: PrepareProps = {
+        duration: mediaPlayer.duration,
       }
       callBack(null, props);
-    },(err: BusinessError)=>{
+    }, (err: BusinessError) => {
       const e: E = {
         code: -1,
         message: `avPlay prepare error:${err.name} message ${err.message}}`
@@ -146,23 +148,47 @@ export class AVPlayerController {
     });
   }
 
-  async prepare(fileName: string, key: number, option: object, callBack: (error: E | null, props:PrepareProps | null) => void) {
+  closeFsRawFd() {
+    if (typeof this.previousSrc === "string") {
+      try {
+        this.context.resourceManager.closeRawFdSync(this.previousSrc);
+        Logger.debug(TAG, `aboutToDisappear, closeRawFd file succeed`);
+      } catch (error) {
+        Logger.debug(TAG,`aboutToDisappear, closeRawFd error is${error.message} error code:${error.code}`);
+      }
+    } else if (typeof this.previousSrc === "object") {
+      try{
+        fs.closeSync(this.previousSrc)
+        Logger.debug(TAG, `aboutToDisappear, close file succeed`);
+      } catch (error) {
+        Logger.debug(TAG, `aboutToDisappear, close file failed with error message:${error.message},error code:${error.code}`);
+      }
+    }
+  }
+
+
+  async prepare(fileName: string, key: number, option: object,
+    callBack: (error: E | null, props: PrepareProps | null) => void) {
+    this.closeFsRawFd()
     const mediaPlayer: media.AVPlayer = await media.createAVPlayer();
     let fileUrl: string = '';
-    if(fileName.startsWith('asset')){  //在npm run dev起服务的时候 用require('./frog.wav') 引入的文件
+    if (fileName.startsWith('asset')) { //在npm run dev起服务的时候 用require('./frog.wav') 引入的文件
       fileUrl = fileName.split('//')[1];
       let fileDescriptor = await this.context.resourceManager.getRawFd(`assets/${fileUrl}`);
+      this.previousSrc = `assets/${fileUrl}`
       mediaPlayer.fdSrc = fileDescriptor;
-    } else if(fileName.startsWith("http://") || fileName.startsWith("https://")){//音频资源是网络资源和npm run start起服务的时候 用require('./frog.wav') 引入的文件
+    } else if (fileName.startsWith("http://") ||
+    fileName.startsWith("https://")) { //音频资源是网络资源和npm run start起服务的时候 用require('./frog.wav') 引入的文件
       mediaPlayer.url = fileName;
-    }  else if (fileName.startsWith('/data')){
-      let resFile = fs.openSync(fileName, fs.OpenMode.READ_ONLY)
-      mediaPlayer.url = `fd://${resFile.fd}`;
-    } else {   //资源在resources/rawfile 下的资源  url: 'whoosh.mp3',
+      this.previousSrc = undefined
+    } else if (fileName.startsWith('/data') || fileName.startsWith('file:')) {
+      this.previousSrc = fs.openSync(fileName, fs.OpenMode.READ_ONLY)
+      mediaPlayer.url = `fd://${this.previousSrc.fd}`;
+    } else { //资源在resources/rawfile 下的资源  url: 'whoosh.mp3',
       let fileDescriptor = await this.context.resourceManager.getRawFd(fileName);
+      this.previousSrc = fileName
       mediaPlayer.fdSrc = fileDescriptor;
     }
-    
     mediaPlayer.on('stateChange', async (state, reason) => {
       switch (state) {
         case AvplayerStatus.IDLE:
@@ -170,7 +196,7 @@ export class AVPlayerController {
           break;
         case AvplayerStatus.INITIALIZED: // avplayer 设置播放源后触发该状态上报
           this.setAudioRendererInfo(mediaPlayer);
-          this.mediaPrepare(mediaPlayer,callBack);
+          this.mediaPrepare(mediaPlayer, callBack);
           break;
         default:
           Logger.info(TAG, 'stateChange AVPlayer state unknown called.');
@@ -195,12 +221,14 @@ export class AVPlayerController {
 
     //播放错误监听
     mediaPlayer.on('error', (err: BusinessError) => {
-      Logger.error(TAG,`failed, code is ${err.code}, message is ${err.message}`);
+      Logger.error(TAG, `failed, code is ${err.code}, message is ${err.message}`);
       mediaPlayer.reset(); // 调用reset重置资源，触发idle状态
     })
+
+
   }
 
-  play(key: number, ctx, callback?: (success: boolean ) => void): void {
+  play(key: number, ctx, callback?: (success: boolean) => void): void {
     const player: media.AVPlayer | undefined = this.playerPool.get(key);
     if (player === null && player === undefined) {
       if (callback != null) {
@@ -211,10 +239,10 @@ export class AVPlayerController {
     player?.on('stateChange', (state, reason) => {
       switch (state) {
         case AvplayerStatus.COMPLETED: // 播放结束后触发该状态机上报
-          ctx.rnInstance.emitDeviceEvent("onPlayChange", { isPlaying:false, playerKey:key });
-          setTimeout(()=>{
+          ctx.rnInstance.emitDeviceEvent("onPlayChange", { isPlaying: false, playerKey: key });
+          setTimeout(() => {
             callback?.(true);
-          },1000)
+          }, 1000)
           this.isPlaying = false;
           break;
         case AvplayerStatus.PLAYING: // play成功调用后触发该状态机上报
@@ -228,9 +256,9 @@ export class AVPlayerController {
 
     player?.play((err: BusinessError) => {
       if (err) {
-        ctx.rnInstance.emitDeviceEvent("onPlayChange", { isPlaying:false, playerKey:key })
+        ctx.rnInstance.emitDeviceEvent("onPlayChange", { isPlaying: false, playerKey: key })
       } else {
-        ctx.rnInstance.emitDeviceEvent("onPlayChange", { isPlaying:true, playerKey:key })
+        ctx.rnInstance.emitDeviceEvent("onPlayChange", { isPlaying: true, playerKey: key })
       }
     })
 
@@ -239,10 +267,10 @@ export class AVPlayerController {
   pause(key: number, cb?: () => void): void {
     const player: media.AVPlayer | undefined = this.playerPool.get(key);
     if (this.isPlaying) {
-      player?.pause().then(()=>{
+      player?.pause().then(() => {
         Logger.info(TAG, `sound: AVPlayer pause success`);
         cb?.();
-      }, ( err: Error)=>{
+      }, (err: Error) => {
         Logger.error(TAG, `sound: AVPlayer pause error${err.name}, message is ${err.message}`);
       });
     }
@@ -265,12 +293,13 @@ export class AVPlayerController {
     try {
       player?.reset();
     } catch (e) {
-      Logger.info(TAG, `sound reset error: ${e}} ` );
+      Logger.info(TAG, `sound reset error: ${e}} `);
     }
   }
 
   release(key: number): void {
     const player: media.AVPlayer | undefined = this.playerPool.get(key);
+    this.closeFsRawFd()
     player?.release();
   }
 
@@ -284,7 +313,7 @@ export class AVPlayerController {
     player?.setVolume(volume)
   }
 
-  getCurrentTime(key: number, callback?: (currentPosition: number | undefined, isPlaying: boolean)=>void) {
+  getCurrentTime(key: number, callback?: (currentPosition: number | undefined, isPlaying: boolean) => void) {
     const player: media.AVPlayer | undefined = this.playerPool.get(key);
     if (player === null && player === undefined) {
       callback?.(-1, false);
@@ -295,7 +324,7 @@ export class AVPlayerController {
 
   setCurrentTime(key: number, value: number): void {
     const player: media.AVPlayer | undefined = this.playerPool.get(key);
-    if(player !== null && player !== undefined){
+    if (player !== null && player !== undefined) {
       if (value < 0) {
         value = 0
       } else if (value > player.duration) {
@@ -307,9 +336,9 @@ export class AVPlayerController {
   }
 
   // value is : 0,1,2,3,4
-  setSpeed(key:number, value: number): void {
+  setSpeed(key: number, value: number): void {
     const player: media.AVPlayer | undefined = this.playerPool.get(key);
-    if(player !== null && player !== undefined){
+    if (player !== null && player !== undefined) {
       player?.setSpeed(value)
     }
   }
@@ -326,14 +355,14 @@ export class AVPlayerController {
 
   }
 
-  setNumberOfLoops(key:number, value: boolean): void {
+  setNumberOfLoops(key: number, value: boolean): void {
     const player: media.AVPlayer | undefined = this.playerPool.get(key);
-    if(player !== null && player !== undefined){
+    if (player !== null && player !== undefined) {
       player.loop = value
     }
   }
 
-  setCategory(category: AVAudioSessionCategory, mixWithOthers: boolean):void{
+  setCategory(category: AVAudioSessionCategory, mixWithOthers: boolean): void {
     this.category = category
     this.mixWithOthers = mixWithOthers
   }
